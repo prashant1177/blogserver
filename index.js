@@ -22,7 +22,7 @@ app.use(
   cors({
     methods: "GET,POST,PUT,DELETE",
     credentials: true, // If using cookies/session-based auth
-    origin: "https://blogclient-three.vercel.app/",
+    origin: "https://blogclient-three.vercel.app",
   })
 );
 app.use(express.json());
