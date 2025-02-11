@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
@@ -20,16 +20,16 @@ const salt = bcrypt.genSaltSync(10);
 
 app.use(
   cors({
-    credentials: true,
-    origin: "http://localhost:3000",
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true, // If using cookies/session-based auth
+    origin: "https://blogclient-three.vercel.app/",
   })
 );
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static(__dirname + '/uploads'));
+app.use("/uploads", express.static(__dirname + "/uploads"));
 
 mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
-
 
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
@@ -89,10 +89,10 @@ app.post("/post", upload.single("file"), async (req, res) => {
   const { token } = req.cookies;
 
   if (!token) {
-    return res.status(401).json({ error: 'Token not provided' });
+    return res.status(401).json({ error: "Token not provided" });
   }
 
-   jwt.verify(token, secretCode, {}, async (err, info) => {
+  jwt.verify(token, secretCode, {}, async (err, info) => {
     const { title, summary, content } = req.body;
     const postDoc = await PostModel.create({
       title,
@@ -106,30 +106,29 @@ app.post("/post", upload.single("file"), async (req, res) => {
   });
 });
 
-
 app.put("/post", upload.single("file"), async (req, res) => {
   let newPath = null;
-  if(req.file){
+  if (req.file) {
     const { originalname, path } = req.file;
     const parts = originalname.split(".");
     const ext = parts[parts.length - 1];
     newPath = path + "." + ext;
     fs.renameSync(path, newPath);
   }
-  
+
   const { token } = req.cookies;
 
   if (!token) {
-    return res.status(401).json({ error: 'Token not provided' });
+    return res.status(401).json({ error: "Token not provided" });
   }
 
   jwt.verify(token, secretCode, {}, async (err, info) => {
     if (err) throw err;
-    const {id, title, summary, content } = req.body;
+    const { id, title, summary, content } = req.body;
     const postDoc = await PostModel.findById(id);
-    
-    if(JSON.stringify(postDoc.author) !== JSON.stringify(info.id)){
-      return res.status(400).json('You are not the author');
+
+    if (JSON.stringify(postDoc.author) !== JSON.stringify(info.id)) {
+      return res.status(400).json("You are not the author");
     }
     await postDoc.updateOne({
       title,
@@ -143,17 +142,19 @@ app.put("/post", upload.single("file"), async (req, res) => {
 });
 
 app.get("/post", async (req, res) => {
-  const posts = await PostModel.find().populate('author', ['username']).sort({createdAt: -1}).limit(20);
+  const posts = await PostModel.find()
+    .populate("author", ["username"])
+    .sort({ createdAt: -1 })
+    .limit(20);
   res.json(posts);
 });
 
-
 app.get("/post/:id", async (req, res) => {
-  
-  const post = await PostModel.findById(req.params.id).populate('author', ['username']);
+  const post = await PostModel.findById(req.params.id).populate("author", [
+    "username",
+  ]);
   res.json(post);
 });
-
 
 app.listen(3001);
 
