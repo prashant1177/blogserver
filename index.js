@@ -17,13 +17,21 @@ const UserModel = require("./models/User");
 const PostModel = require("./models/Post");
 
 const salt = bcrypt.genSaltSync(10);
-
+const allowedOrigins = [
+  "https://blogclient-three.vercel.app",
+  "http://localhost:3000",
+];
 app.use(
   cors({
     methods: "GET,POST,PUT,DELETE",
     credentials: true, // If using cookies/session-based auth
-    // origin: "https://blogclient-three.vercel.app",
-    origin: "*",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true); // Allow the request
+      } else {
+        callback(new Error("Not allowed by CORS")); // Block the request
+      }
+    },
   })
 );
 app.use(express.json());
