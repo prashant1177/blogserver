@@ -48,7 +48,12 @@ app.post("/login", async (req, res) => {
     if (passOk) {
       jwt.sign({ username, id: userDoc._id }, secretCode, {}, (err, token) => {
         if (err) throw err;
-        res.cookie("token", token).json({
+        res.cookie("token", token,{
+          httpOnly: true,  // This helps mitigate XSS attacks
+          secure: false,  // Set to true in production (HTTPS only)
+          // Prevents cross-site request forgery
+          maxAge: 24 * 60 * 60 * 1000,  // Cookie expiration (1 day)
+        }).json({
           id: userDoc._id,
           username,
         });
