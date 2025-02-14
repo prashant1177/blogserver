@@ -77,8 +77,7 @@ app.post("/logout", (req, res) => {
 
 app.post("/post", async (req, res) => {
  
-
-  const { token} = req.body;
+  const { token } = req.cookies;
   if (!token) {
     return res.status(401).json({ error: "Token not provided" });
   }
