@@ -6,10 +6,6 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
-const fs = require("fs");
-
 const mongoUri = process.env.MONGO_URI;
 const secretCode = process.env.JWT_SECRET;
 
@@ -25,18 +21,11 @@ app.use(
   cors({
     methods: "GET,POST,PUT,DELETE",
     credentials: true, // If using cookies/session-based auth
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true); // Allow the request
-      } else {
-        callback(new Error("Not allowed by CORS")); // Block the request
-      }
-    },
+    origin: allowedOrigins,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
-app.use("/uploads", express.static(__dirname + "/uploads"));
 
 mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -88,26 +77,25 @@ app.post("/logout", (req, res) => {
   res.cookie("token", "").json("ok");
 });
 
-app.post("/post", upload.single("file"), async (req, res) => {
-  const { originalname, path } = req.file;
-  const parts = originalname.split(".");
-  const ext = parts[parts.length - 1];
-  const newPath = path + "." + ext;
-  fs.renameSync(path, newPath);
+app.post("/post", async (req, res) => {
+ 
 
   const { token } = req.cookies;
 
   if (!token) {
     return res.status(401).json({ error: "Token not provided" });
   }
+    if (err) return res.status(403).json({ error: "Invalid token" }); // <-- Error Handling
 
   jwt.verify(token, secretCode, {}, async (err, info) => {
-    const { title, summary, content } = req.body;
+    if (err) return res.status(403).json({ error: "Invalid token" }); // <-- Error Handling
+
+    const { title, summary, content,cover } = req.body;
     const postDoc = await PostModel.create({
       title,
       summary,
       content,
-      cover: newPath,
+      cover,
       author: info.id,
     });
 
@@ -115,15 +103,8 @@ app.post("/post", upload.single("file"), async (req, res) => {
   });
 });
 
-app.put("/post", upload.single("file"), async (req, res) => {
-  let newPath = null;
-  if (req.file) {
-    const { originalname, path } = req.file;
-    const parts = originalname.split(".");
-    const ext = parts[parts.length - 1];
-    newPath = path + "." + ext;
-    fs.renameSync(path, newPath);
-  }
+app.put("/post",  async (req, res) => {
+ 
 
   const { token } = req.cookies;
 
@@ -133,7 +114,7 @@ app.put("/post", upload.single("file"), async (req, res) => {
 
   jwt.verify(token, secretCode, {}, async (err, info) => {
     if (err) throw err;
-    const { id, title, summary, content } = req.body;
+    const { id, title, summary, content,cover } = req.body;
     const postDoc = await PostModel.findById(id);
 
     if (JSON.stringify(postDoc.author) !== JSON.stringify(info.id)) {
@@ -143,7 +124,7 @@ app.put("/post", upload.single("file"), async (req, res) => {
       title,
       summary,
       content,
-      cover: newPath ? newPath : postDoc.cover,
+      cover,
     });
 
     res.json(postDoc);
