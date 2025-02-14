@@ -13,15 +13,12 @@ const UserModel = require("./models/User");
 const PostModel = require("./models/Post");
 
 const salt = bcrypt.genSaltSync(10);
-const allowedOrigins = [
-  "https://blogclient-three.vercel.app",
-  "http://localhost:3000",
-];
+
 app.use(
   cors({
     methods: "GET,POST,PUT,DELETE",
     credentials: true, // If using cookies/session-based auth
-    origin: allowedOrigins,
+    origin: "https://blogclient-three.vercel.app",
   })
 );
 app.use(express.json());
@@ -81,11 +78,9 @@ app.post("/post", async (req, res) => {
  
 
   const { token } = req.cookies;
-
   if (!token) {
     return res.status(401).json({ error: "Token not provided" });
   }
-    if (err) return res.status(403).json({ error: "Invalid token" }); // <-- Error Handling
 
   jwt.verify(token, secretCode, {}, async (err, info) => {
     if (err) return res.status(403).json({ error: "Invalid token" }); // <-- Error Handling
